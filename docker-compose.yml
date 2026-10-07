@@ -1,0 +1,40 @@
+version: "3.8"
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: doccano_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: doccano
+      POSTGRES_USER: doccano
+      POSTGRES_PASSWORD: doccano_password_segura
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U doccano -d doccano"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  web:
+    image: doccano/doccano:latest
+    container_name: doccano_web
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgres://doccano:doccano_password_segura@db:5432/doccano?sslmode=disable
+      - SECRET_KEY=django-insecure-cambia-esta-clave-en-produccion
+      - ADMIN_USERNAME=admin
+      - ADMIN_EMAIL=admin@example.com
+      - ADMIN_PASSWORD=adminpassword
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - doccano_data:/data
+
+volumes:
+  postgres_data:
+  doccano_data:
